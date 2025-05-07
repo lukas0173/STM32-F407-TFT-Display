@@ -1,0 +1,5 @@
+../Drivers/lvgl/examples/widgets/checkbox/../../../src/hal/../draw/../misc/../font/../misc/lv_area.h:294:26:lv_pct	2
+../Drivers/lvgl/examples/widgets/checkbox/../../../src/core/lv_disp.h:182:26:lv_scr_act	1
+../Drivers/lvgl/examples/widgets/checkbox/lv_example_checkbox_2.c:9:13:radio_event_handler	2
+../Drivers/lvgl/examples/widgets/checkbox/lv_example_checkbox_2.c:27:13:radiobutton_create	1
+../Drivers/lvgl/examples/widgets/checkbox/lv_example_checkbox_2.c:39:6:lv_example_checkbox_2	3

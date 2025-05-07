@@ -1,0 +1,12 @@
+../Drivers/lvgl/examples/widgets/list/../../../src/hal/../draw/../misc/../font/../misc/lv_area.h:294:26:lv_pct	16	static
+../Drivers/lvgl/examples/widgets/list/../../../src/core/lv_disp.h:182:26:lv_scr_act	8	static
+../Drivers/lvgl/examples/widgets/list/../../../src/lv_api_map.h:54:20:lv_obj_move_foreground	24	static
+../Drivers/lvgl/examples/widgets/list/../../../src/lv_api_map.h:66:20:lv_obj_move_background	16	static
+../Drivers/lvgl/examples/widgets/list/lv_example_list_2.c:11:13:event_handler	40	static
+../Drivers/lvgl/examples/widgets/list/lv_example_list_2.c:38:13:event_handler_top	24	static
+../Drivers/lvgl/examples/widgets/list/lv_example_list_2.c:48:13:event_handler_up	24	static
+../Drivers/lvgl/examples/widgets/list/lv_example_list_2.c:60:13:event_handler_center	32	static
+../Drivers/lvgl/examples/widgets/list/lv_example_list_2.c:75:13:event_handler_dn	24	static
+../Drivers/lvgl/examples/widgets/list/lv_example_list_2.c:87:13:event_handler_bottom	24	static
+../Drivers/lvgl/examples/widgets/list/lv_example_list_2.c:97:13:event_handler_swap	40	static
+../Drivers/lvgl/examples/widgets/list/lv_example_list_2.c:114:6:lv_example_list_2	32	static

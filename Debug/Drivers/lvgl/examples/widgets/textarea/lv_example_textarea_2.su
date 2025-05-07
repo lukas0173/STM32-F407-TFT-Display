@@ -1,0 +1,4 @@
+../Drivers/lvgl/examples/widgets/textarea/../../../src/hal/../draw/../misc/../font/../misc/lv_area.h:294:26:lv_pct	16	static
+../Drivers/lvgl/examples/widgets/textarea/../../../src/core/lv_disp.h:182:26:lv_scr_act	8	static
+../Drivers/lvgl/examples/widgets/textarea/lv_example_textarea_2.c:8:6:lv_example_textarea_2	40	static
+../Drivers/lvgl/examples/widgets/textarea/lv_example_textarea_2.c:44:13:ta_event_cb	24	static

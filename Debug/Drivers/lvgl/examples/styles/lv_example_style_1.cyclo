@@ -1,0 +1,4 @@
+../Drivers/lvgl/examples/styles/../../src/hal/../draw/../misc/../font/../misc/lv_area.h:294:26:lv_pct	2
+../Drivers/lvgl/examples/styles/../../src/hal/../draw/../misc/lv_style.h:543:20:lv_style_set_pad_ver	1
+../Drivers/lvgl/examples/styles/../../src/core/lv_disp.h:182:26:lv_scr_act	1
+../Drivers/lvgl/examples/styles/lv_example_style_1.c:7:6:lv_example_style_1	1

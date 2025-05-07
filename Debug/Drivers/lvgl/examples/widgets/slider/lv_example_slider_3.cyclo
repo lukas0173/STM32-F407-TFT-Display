@@ -1,0 +1,12 @@
+../Drivers/lvgl/examples/widgets/slider/../../../src/hal/../draw/../misc/../font/../misc/lv_area.h:123:26:lv_area_get_width	1
+../Drivers/lvgl/examples/widgets/slider/../../../src/hal/../draw/../misc/lv_color.h:594:26:lv_color_make	1
+../Drivers/lvgl/examples/widgets/slider/../../../src/hal/../draw/../misc/lv_color.h:633:26:lv_color_hex3	1
+../Drivers/lvgl/examples/widgets/slider/../../../src/hal/../draw/sw/../../core/lv_obj_pos.h:199:20:lv_obj_center	1
+../Drivers/lvgl/examples/widgets/slider/../../../src/core/lv_disp.h:182:26:lv_scr_act	1
+../Drivers/lvgl/examples/widgets/slider/../../../src/widgets/lv_slider.h:84:20:lv_slider_set_value	1
+../Drivers/lvgl/examples/widgets/slider/../../../src/widgets/lv_slider.h:95:20:lv_slider_set_left_value	1
+../Drivers/lvgl/examples/widgets/slider/../../../src/widgets/lv_slider.h:116:20:lv_slider_set_mode	1
+../Drivers/lvgl/examples/widgets/slider/../../../src/widgets/lv_slider.h:130:23:lv_slider_get_value	1
+../Drivers/lvgl/examples/widgets/slider/../../../src/widgets/lv_slider.h:140:23:lv_slider_get_left_value	1
+../Drivers/lvgl/examples/widgets/slider/lv_example_slider_3.c:10:6:lv_example_slider_3	1
+../Drivers/lvgl/examples/widgets/slider/lv_example_slider_3.c:25:13:slider_event_cb	4
