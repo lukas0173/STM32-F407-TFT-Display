@@ -21,3 +21,19 @@ void SysTick_Handler(void) {
 	/* USER CODE END SysTick_IRQn 1 */
 }
 ```
+I'm using the following pin as Output:
+- PE11 -> CS.
+- PE12 -> DC.
+- PE13 -> RESET.
+  
+If you wanted to use the other pins, make sure to modify the driver header file `ILI9486.h`:
+```cpp
+#define LCD_CS_0        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_RESET);
+#define LCD_CS_1        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_SET);
+
+#define LCD_RST_0       HAL_GPIO_WritePin(GPIOE, GPIO_PIN_13, GPIO_PIN_RESET);
+#define LCD_RST_1       HAL_GPIO_WritePin(GPIOE, GPIO_PIN_13, GPIO_PIN_SET);
+
+#define LCD_DC_0        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, GPIO_PIN_RESET);
+#define LCD_DC_1        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, GPIO_PIN_SET);
+```
