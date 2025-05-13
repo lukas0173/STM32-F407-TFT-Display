@@ -1,4 +1,3 @@
-/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:148:20:lv_anim_set_time	16	static
 /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:158:20:lv_anim_set_delay	16	static
 /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:169:20:lv_anim_set_values	24	static
 /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:185:20:lv_anim_set_custom_exec_cb	16	static
@@ -11,4 +10,4 @@
 /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:288:20:lv_anim_set_early_apply	16	static
 /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:299:20:lv_anim_set_user_data	16	static
 ../Drivers/UI/ui.c:43:6:Indicatorrotation_Animation	88	static
-../Drivers/UI/ui.c:70:6:ui_init	32	static
+../Drivers/UI/ui.c:69:6:ui_init	32	static

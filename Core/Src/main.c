@@ -22,8 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "lvgl.h"
-#include "LCDController.h"
-#include "demos/benchmark/lv_demo_benchmark.h"
+#include "LCDController.h" #include "demos/benchmark/lv_demo_benchmark.h"
 #include "ili9486_lvgl.h"
 #include "ui.h"
 
@@ -52,6 +51,11 @@ DMA_HandleTypeDef hdma_spi1_tx;
 
 /* USER CODE BEGIN PV */
 uint8_t speedValue = 0;
+uint8_t delayCounter = 0; // To slow down the change in while loop without affecting the renderer
+
+static lv_anim_t speedIndicatorArrowAnimation; // speed indicator arrow animation
+int32_t rotationValue;
+int32_t previousAngleValue = -1700;
 
 /* USER CODE END PV */
 
@@ -67,13 +71,54 @@ static void MX_RTC_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// Display speed value
 void update_speed_display(int new_speed) {
-    char speed_str[10];
-    sprintf(speed_str, "%d", new_speed); // Format the speed as a string
+	char speed_str[10];
+	sprintf(speed_str, "%d", new_speed); // Format the speed as a string
 
-    if (ui_speed_value != NULL) { // Check if the label exists
-        lv_label_set_text(ui_speed_value, speed_str);
+	if (ui_speed_value != NULL) { // Check if the label exists
+		lv_label_set_text(ui_speed_value, speed_str);
+	}
+}
+
+void update_speed_indicator_arrow(lv_obj_t *arrowObj, int32_t targetAngle, int32_t previousAngle, uint32_t duration) {
+    if (!arrowObj) {
+        return;
     }
+
+    // Stop and delete any previous animation that might be using the _ui_anim_callback_set_image_angle on this object.
+	lv_anim_del(arrowObj, (lv_anim_exec_xcb_t)_ui_anim_callback_set_image_angle);
+
+    // This user_data holds the target object for the callback.
+    ui_anim_user_data_t *user_data = (ui_anim_user_data_t *)lv_mem_alloc(sizeof(ui_anim_user_data_t));
+    if (!user_data) {
+        return; // Allocation failed
+    }
+    user_data->target = arrowObj;
+    user_data->val = 0; // Or an appropriate default/indicator
+
+    lv_anim_init(&speedIndicatorArrowAnimation);
+
+    // Get the current visual angle of the needle as the starting point.
+    // LVGL stores rotation in 0.1 degree units.
+    int32_t current_angle_tenths = previousAngle;
+
+    lv_anim_set_user_data(&speedIndicatorArrowAnimation, user_data);
+    lv_anim_set_custom_exec_cb(&speedIndicatorArrowAnimation, _ui_anim_callback_set_image_angle);
+    lv_anim_set_values(&speedIndicatorArrowAnimation, current_angle_tenths, targetAngle);
+    lv_anim_set_time(&speedIndicatorArrowAnimation, duration);
+    lv_anim_set_path_cb(&speedIndicatorArrowAnimation, lv_anim_path_ease_out); // Or lv_anim_path_linear, etc.
+    lv_anim_set_deleted_cb(&speedIndicatorArrowAnimation, _ui_anim_callback_free_user_data); // Crucial for freeing user_data
+
+    // Set other parameters to default values (no repeat, no playback for this use case)
+    lv_anim_set_playback_time(&speedIndicatorArrowAnimation, 0);
+    lv_anim_set_playback_delay(&speedIndicatorArrowAnimation, 0);
+    lv_anim_set_repeat_count(&speedIndicatorArrowAnimation, 0); // LV_ANIM_REPEAT_INFINITE for looping
+    lv_anim_set_repeat_delay(&speedIndicatorArrowAnimation, 0);
+    lv_anim_set_early_apply(&speedIndicatorArrowAnimation, false);
+    lv_anim_set_delay(&speedIndicatorArrowAnimation, 0); // No initial delay for direct speed updates
+
+    lv_anim_start(&speedIndicatorArrowAnimation);
 }
 /* USER CODE END 0 */
 
@@ -142,11 +187,18 @@ int main(void) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-		if (speedValue == 50) {
-			speedValue = 0;
+		delayCounter++;
+		if (delayCounter == 5) {
+			delayCounter = 0;
+			if (speedValue == 50) {
+				speedValue = 0;
+			}
+			speedValue++;
+			update_speed_display(speedValue);
+			rotationValue = -1700 + speedValue * 60;
+			update_speed_indicator_arrow(ui_speed_indicator_arrow, rotationValue, previousAngleValue, 300);
+			previousAngleValue = -1700 + speedValue * 60;
 		}
-		speedValue ++;
-		update_speed_display(speedValue);
 	}
 	/* USER CODE END 3 */
 }
