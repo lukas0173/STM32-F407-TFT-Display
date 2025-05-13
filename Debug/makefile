@@ -135,6 +135,10 @@ RM := rm -rf
 -include Drivers/lvgl/demos/keypad_encoder/subdir.mk
 -include Drivers/lvgl/demos/benchmark/assets/subdir.mk
 -include Drivers/lvgl/demos/benchmark/subdir.mk
+-include Drivers/UI/screens/subdir.mk
+-include Drivers/UI/images/subdir.mk
+-include Drivers/UI/components/subdir.mk
+-include Drivers/UI/subdir.mk
 -include Drivers/STM32F4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk

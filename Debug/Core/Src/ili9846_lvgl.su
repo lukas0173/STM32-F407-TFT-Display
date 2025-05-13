@@ -1,7 +1,7 @@
-../Core/Src/ili9846_lvgl.c:28:13:ConvHL	24	static
-../Core/Src/ili9846_lvgl.c:40:6:ILI9486_Init_Adapter	8	static
-../Core/Src/ili9846_lvgl.c:55:6:ILI9486_SetWindow_Adapter	24	static
-../Core/Src/ili9846_lvgl.c:69:6:ILI9486_WritePixel_Adapter	16	static
-../Core/Src/ili9846_lvgl.c:96:6:ILI9486_DrawBitmap_Adapter	16	static
-../Core/Src/ili9846_lvgl.c:116:6:ILI9486_DrawBitmapDMA_Adapter	16	static
-../Core/Src/ili9846_lvgl.c:140:6:ILI9486_EndOfDrawBitmap_Adapter	4	static
+../Core/Src/ili9846_lvgl.c:20:13:ConvHL	24	static
+../Core/Src/ili9846_lvgl.c:32:6:ILI9486_Init_Adapter	8	static
+../Core/Src/ili9846_lvgl.c:38:6:ILI9486_SetWindow_Adapter	24	static
+../Core/Src/ili9846_lvgl.c:46:6:ILI9486_WritePixel_Adapter	16	static
+../Core/Src/ili9846_lvgl.c:54:6:ILI9486_DrawBitmap_Adapter	16	static
+../Core/Src/ili9846_lvgl.c:66:6:ILI9486_DrawBitmapDMA_Adapter	16	static
+../Core/Src/ili9846_lvgl.c:75:6:ILI9486_EndOfDrawBitmap_Adapter	4	static

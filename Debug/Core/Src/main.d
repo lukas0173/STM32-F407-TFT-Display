@@ -259,7 +259,11 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/demos/benchmark/../../lvgl.h \
  /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/demos/benchmark/../benchmark/lv_demo_benchmark.h \
  ../Core/Inc/ili9486_lvgl.h ../Core/Inc/main.h ../Core/Inc/ILI9486.h \
- ../Core/Inc/fonts.h
+ ../Core/Inc/fonts.h \
+ /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/UI/ui.h \
+ /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/UI/ui_helpers.h \
+ /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/UI/ui.h \
+ /home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/UI/ui_events.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -524,3 +528,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/main.h:
 ../Core/Inc/ILI9486.h:
 ../Core/Inc/fonts.h:
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/UI/ui.h:
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/UI/ui_helpers.h:
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/UI/ui.h:
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/UI/ui_events.h:

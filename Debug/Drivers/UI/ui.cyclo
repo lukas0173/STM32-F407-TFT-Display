@@ -1,0 +1,14 @@
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:148:20:lv_anim_set_time	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:158:20:lv_anim_set_delay	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:169:20:lv_anim_set_values	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:185:20:lv_anim_set_custom_exec_cb	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:196:20:lv_anim_set_path_cb	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:237:20:lv_anim_set_deleted_cb	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:247:20:lv_anim_set_playback_time	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:257:20:lv_anim_set_playback_delay	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:267:20:lv_anim_set_repeat_count	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:277:20:lv_anim_set_repeat_delay	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:288:20:lv_anim_set_early_apply	1
+/home/kiet/STM32CubeIDE/workspace_1.18.1/STM32_TFT_Display_F407/Drivers/lvgl/src/misc/lv_anim.h:299:20:lv_anim_set_user_data	1
+../Drivers/UI/ui.c:43:6:Indicatorrotation_Animation	1
+../Drivers/UI/ui.c:70:6:ui_init	1
