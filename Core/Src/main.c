@@ -57,6 +57,7 @@ static lv_anim_t speedIndicatorArrowAnimation; // speed indicator arrow animatio
 int32_t rotationValue;
 int32_t previousAngleValue = -1700;
 uint8_t rotationDirection = 1;
+bool toggleSignal = false;
 
 /* USER CODE END PV */
 
@@ -134,6 +135,18 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
     }
   }
 }
+
+// Toggle indicator
+void toggle_indicator(lv_obj_t *indicator_obj, bool is_active) {
+    if (!indicator_obj) {
+        return;
+    }
+     if (is_active) {
+         lv_obj_clear_flag(indicator_obj, LV_OBJ_FLAG_HIDDEN); // Make it visible
+     } else {
+         lv_obj_add_flag(indicator_obj, LV_OBJ_FLAG_HIDDEN);   // Make it hidden
+     }
+}
 /* USER CODE END 0 */
 
 /**
@@ -203,8 +216,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 		delayCounter++;
-		if (delayCounter == 10) {
-			delayCounter = 0;
+		if (delayCounter % 10 == 0) {
+
 			if (speedValue == 70) {
 				speedValue = 0;
 			}
@@ -213,6 +226,25 @@ int main(void)
 			rotationValue = -1700 + speedValue * 43;
 			update_speed_indicator_arrow(ui_speed_indicator_arrow, rotationValue, previousAngleValue, 50);
 			previousAngleValue = rotationValue;
+		}
+
+		if (delayCounter == 15) {
+
+			toggleSignal = !toggleSignal;
+			toggle_indicator(ui_turn_signal_left, toggleSignal);
+		}
+
+		if (delayCounter == 20) {
+
+			toggleSignal = !toggleSignal;
+			toggle_indicator(ui_turn_signal_right, toggleSignal);
+		}
+
+		if (delayCounter == 25) {
+			delayCounter = 0;
+
+			toggleSignal = !toggleSignal;
+			toggle_indicator(ui_engine_check, toggleSignal);
 		}
 
 //		if (delayCounter == 20) {
