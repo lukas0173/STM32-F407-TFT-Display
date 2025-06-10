@@ -22,7 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "lvgl.h"
-#include "LCDController.h" #include "demos/benchmark/lv_demo_benchmark.h"
+#include "LCDController.h"
 #include "ili9486_lvgl.h"
 #include "ui.h"
 
@@ -44,6 +44,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+CAN_HandleTypeDef hcan1;
+
 RTC_HandleTypeDef hrtc;
 
 SPI_HandleTypeDef hspi1;
@@ -59,6 +61,15 @@ int32_t previousAngleValue = -1700;
 uint8_t rotationDirection = 1;
 bool toggleSignal = false;
 
+// -- CAN variables --
+CAN_TxHeaderTypeDef TxHeader; // Header instance for the transmit message
+uint8_t TxData[8] = "Transmit"; // The data of the transmit message
+uint32_t TxMailbox;
+
+CAN_RxHeaderTypeDef RxHeaderBack; // Store the received message's header
+CAN_FilterTypeDef sFilterConfig; // Filter configuration for the receive process
+uint8_t RxDataBack[8]; // Store the received message
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -67,13 +78,14 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_RTC_Init(void);
+static void MX_CAN1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-// Display speed value
+// -- Display speed value --
 void update_speed_display(int new_speed) {
 	char speed_str[10];
 	sprintf(speed_str, "%d", new_speed); // Format the speed as a string
@@ -83,138 +95,148 @@ void update_speed_display(int new_speed) {
 	}
 }
 
-// Update the speed indicator arrow
-void update_speed_indicator_arrow(lv_obj_t *arrowObj, int32_t targetAngle, int32_t previousAngle, uint32_t duration) {
-    if (!arrowObj) {
-        return;
-    }
+// -- Update the speed indicator arrow --
+void update_speed_indicator_arrow(lv_obj_t *arrowObj, int32_t targetAngle,
+		int32_t previousAngle, uint32_t duration) {
+	if (!arrowObj) {
+		return;
+	}
 
-    // Stop and delete any previous animation that might be using the _ui_anim_callback_set_image_angle on this object.
-	lv_anim_del(arrowObj, (lv_anim_exec_xcb_t)_ui_anim_callback_set_image_angle);
+	// Stop and delete any previous animation that might be using the _ui_anim_callback_set_image_angle on this object.
+	lv_anim_del(arrowObj,
+			(lv_anim_exec_xcb_t) _ui_anim_callback_set_image_angle);
 
-    // This user_data holds the target object for the callback.
-    ui_anim_user_data_t *user_data = (ui_anim_user_data_t *)lv_mem_alloc(sizeof(ui_anim_user_data_t));
-    if (!user_data) {
-        return; // Allocation failed
-    }
-    user_data->target = arrowObj;
-    user_data->val = 0; // Or an appropriate default/indicator
+	// This user_data holds the target object for the callback.
+	ui_anim_user_data_t *user_data = (ui_anim_user_data_t*) lv_mem_alloc(
+			sizeof(ui_anim_user_data_t));
+	if (!user_data) {
+		return; // Allocation failed
+	}
+	user_data->target = arrowObj;
+	user_data->val = 0; // Or an appropriate default/indicator
 
-    lv_anim_init(&speedIndicatorArrowAnimation);
+	lv_anim_init(&speedIndicatorArrowAnimation);
 
-    // Get the current visual angle of the needle as the starting point.
-    // LVGL stores rotation in 0.1 degree units.
-    int32_t current_angle_tenths = previousAngle;
+	// Get the current visual angle of the needle as the starting point.
+	// LVGL stores rotation in 0.1 degree units.
+	int32_t current_angle_tenths = previousAngle;
 
-    lv_anim_set_user_data(&speedIndicatorArrowAnimation, user_data);
-    lv_anim_set_custom_exec_cb(&speedIndicatorArrowAnimation, _ui_anim_callback_set_image_angle);
-    lv_anim_set_values(&speedIndicatorArrowAnimation, current_angle_tenths, targetAngle);
-    lv_anim_set_time(&speedIndicatorArrowAnimation, duration);
-    lv_anim_set_path_cb(&speedIndicatorArrowAnimation, lv_anim_path_linear); // Or lv_anim_path_linear, etc.
-    lv_anim_set_deleted_cb(&speedIndicatorArrowAnimation, _ui_anim_callback_free_user_data); // Crucial for freeing user_data
+	lv_anim_set_user_data(&speedIndicatorArrowAnimation, user_data);
+	lv_anim_set_custom_exec_cb(&speedIndicatorArrowAnimation,
+			_ui_anim_callback_set_image_angle);
+	lv_anim_set_values(&speedIndicatorArrowAnimation, current_angle_tenths,
+			targetAngle);
+	lv_anim_set_time(&speedIndicatorArrowAnimation, duration);
+	lv_anim_set_path_cb(&speedIndicatorArrowAnimation, lv_anim_path_linear); // Or lv_anim_path_linear, etc.
+	lv_anim_set_deleted_cb(&speedIndicatorArrowAnimation,
+			_ui_anim_callback_free_user_data); // Crucial for freeing user_data
 
-    // Set other parameters to default values (no repeat, no playback for this use case)
-    lv_anim_set_playback_time(&speedIndicatorArrowAnimation, 0);
-    lv_anim_set_playback_delay(&speedIndicatorArrowAnimation, 0);
-    lv_anim_set_repeat_count(&speedIndicatorArrowAnimation, 0); // LV_ANIM_REPEAT_INFINITE for looping
-    lv_anim_set_repeat_delay(&speedIndicatorArrowAnimation, 0);
-    lv_anim_set_early_apply(&speedIndicatorArrowAnimation, false);
-    lv_anim_set_delay(&speedIndicatorArrowAnimation, 0); // No initial delay for direct speed updates
+	// Set other parameters to default values (no repeat, no playback for this use case)
+	lv_anim_set_playback_time(&speedIndicatorArrowAnimation, 0);
+	lv_anim_set_playback_delay(&speedIndicatorArrowAnimation, 0);
+	lv_anim_set_repeat_count(&speedIndicatorArrowAnimation, 0); // LV_ANIM_REPEAT_INFINITE for looping
+	lv_anim_set_repeat_delay(&speedIndicatorArrowAnimation, 0);
+	lv_anim_set_early_apply(&speedIndicatorArrowAnimation, false);
+	lv_anim_set_delay(&speedIndicatorArrowAnimation, 0); // No initial delay for direct speed updates
 
-    lv_anim_start(&speedIndicatorArrowAnimation);
+	lv_anim_start(&speedIndicatorArrowAnimation);
 }
 
-// Calling ready when the transfer has actually completed
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-  if (hspi->Instance == SPI1) // Check if it's the SPI connected to the display
-  {
-    lv_disp_drv_t *drv = lv_disp_get_default()->driver;
-    if(drv) {
-        lv_disp_flush_ready(drv);
-    }
-  }
+// -- Calling ready when the transfer has actually completed --
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+	if (hspi->Instance == SPI1) // Check if it's the SPI connected to the display
+	{
+		lv_disp_drv_t *drv = lv_disp_get_default()->driver;
+		if (drv) {
+			lv_disp_flush_ready(drv);
+		}
+	}
 }
 
-// Toggle indicator
+// -- Toggle indicators --
 void toggle_indicator(lv_obj_t *indicator_obj, bool is_active) {
-    if (!indicator_obj) {
-        return;
-    }
-     if (is_active) {
-         lv_obj_clear_flag(indicator_obj, LV_OBJ_FLAG_HIDDEN); // Make it visible
-     } else {
-         lv_obj_add_flag(indicator_obj, LV_OBJ_FLAG_HIDDEN);   // Make it hidden
-     }
+	if (!indicator_obj) {
+		return;
+	}
+	if (is_active) {
+		lv_obj_clear_flag(indicator_obj, LV_OBJ_FLAG_HIDDEN); // Make it visible
+	} else {
+		lv_obj_add_flag(indicator_obj, LV_OBJ_FLAG_HIDDEN);   // Make it hidden
+	}
+}
+
+// -- CAN Reception --
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
+	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeaderBack, RxDataBack);
 }
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
 
-  /* USER CODE BEGIN 1 */
+	/* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_SPI1_Init();
-  MX_RTC_Init();
-  /* USER CODE BEGIN 2 */
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_DMA_Init();
+	MX_SPI1_Init();
+	MX_RTC_Init();
+	MX_CAN1_Init();
+	/* USER CODE BEGIN 2 */
 	lv_init();
 	lv_port_disp_init();
 	ui_init();
-////
-//	/* Change Active Screen's background color */
-//	lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x003a57),
-//			LV_PART_MAIN);
-//	lv_obj_set_style_text_color(lv_scr_act(), lv_color_hex(0xffffff),
-//			LV_PART_MAIN);
-//
-//	/* Create a spinner */
-//	lv_obj_t *spinner = lv_spinner_create(lv_scr_act(), 1000, 60);
-//	lv_obj_set_size(spinner, 64, 64);
-//	lv_obj_align(spinner, LV_ALIGN_BOTTOM_MID, 0, 0);
 
-//	lv_demo_benchmark();
+	// -- CAN initialization --
+	HAL_CAN_Start(&hcan); // Put the CAN to work
+	TxHeader.DLC = 8; // Length of the data field inside the data frame (Bytes)
+	TxHeader.RTR = CAN_RTR_DATA;
+	TxHeader.IDE = CAN_ID_STD;
+	TxHeader.StdId = 0xAAA;
 
-//	LCD_SCAN_DIR Lcd_ScanDir = SCAN_DIR_DFT;
-//	LCD_Init(Lcd_ScanDir, 200);
-//	LCD_Clear(YELLOW);
-//	LCD_Clear(LCD_BACKGROUND);
-//	GUI_Show();
+	// Reception filter configuration
+	sFilterConfig.FilterActivation = CAN_FILTER_ENABLE; // Enable the filter bank
+	sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO1;
+	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	sFilterConfig.FilterIdHigh = 0xAAA << 5;
+	sFilterConfig.FilterIdLow = 0;
+	sFilterConfig.FilterMaskIdHigh = 0x7FF << 5; // SET 0 to unfilter
+	sFilterConfig.FilterMaskIdLow = 0;
 
-  /* USER CODE END 2 */
+	HAL_CAN_ConfigFilter(&hcan, &sFilterConfig); // Apply the filter
+	HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO1_MSG_PENDING);
+	/* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
 	while (1) {
 		lv_timer_handler();
 		HAL_Delay(5);
-    /* USER CODE END WHILE */
+		/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+		/* USER CODE BEGIN 3 */
 		delayCounter++;
 		if (delayCounter % 10 == 0) {
 
@@ -223,8 +245,9 @@ int main(void)
 			}
 			speedValue++;
 			update_speed_display(speedValue);
-			rotationValue = -1700 + speedValue * 43;
-			update_speed_indicator_arrow(ui_speed_indicator_arrow, rotationValue, previousAngleValue, 50);
+			rotationValue = -1700 + speedValue * 43; // From 1700 to ~ 3000
+			update_speed_indicator_arrow(ui_speed_indicator_arrow,
+					rotationValue, previousAngleValue, 50);
 			previousAngleValue = rotationValue;
 		}
 
@@ -262,201 +285,225 @@ int main(void)
 //			previousAngleValue = rotationValue;
 //		}
 	}
-  /* USER CODE END 3 */
+	/* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config(void) {
+	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
 
-  /** Configure the main internal regulator output voltage
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+	/** Configure the main internal regulator output voltage
+	 */
+	__HAL_RCC_PWR_CLK_ENABLE();
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 25;
-  RCC_OscInitStruct.PLL.PLLN = 336;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	/** Initializes the RCC Oscillators according to the specified parameters
+	 * in the RCC_OscInitTypeDef structure.
+	 */
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLM = 25;
+	RCC_OscInitStruct.PLL.PLLN = 336;
+	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+	RCC_OscInitStruct.PLL.PLLQ = 4;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+		Error_Handler();
+	}
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+	/** Initializes the CPU, AHB and APB buses clocks
+	 */
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
+		Error_Handler();
+	}
 }
 
 /**
-  * @brief RTC Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_RTC_Init(void)
-{
+ * @brief CAN1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_CAN1_Init(void) {
 
-  /* USER CODE BEGIN RTC_Init 0 */
+	/* USER CODE BEGIN CAN1_Init 0 */
 
-  /* USER CODE END RTC_Init 0 */
+	/* USER CODE END CAN1_Init 0 */
 
-  RTC_TimeTypeDef sTime = {0};
-  RTC_DateTypeDef sDate = {0};
+	/* USER CODE BEGIN CAN1_Init 1 */
 
-  /* USER CODE BEGIN RTC_Init 1 */
+	/* USER CODE END CAN1_Init 1 */
+	hcan1.Instance = CAN1;
+	hcan1.Init.Prescaler = 16;
+	hcan1.Init.Mode = CAN_MODE_NORMAL;
+	hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+	hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
+	hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+	hcan1.Init.TimeTriggeredMode = DISABLE;
+	hcan1.Init.AutoBusOff = ENABLE;
+	hcan1.Init.AutoWakeUp = ENABLE;
+	hcan1.Init.AutoRetransmission = DISABLE;
+	hcan1.Init.ReceiveFifoLocked = DISABLE;
+	hcan1.Init.TransmitFifoPriority = DISABLE;
+	if (HAL_CAN_Init(&hcan1) != HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN CAN1_Init 2 */
 
-  /* USER CODE END RTC_Init 1 */
-
-  /** Initialize RTC Only
-  */
-  hrtc.Instance = RTC;
-  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-  hrtc.Init.AsynchPrediv = 127;
-  hrtc.Init.SynchPrediv = 255;
-  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-  if (HAL_RTC_Init(&hrtc) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /* USER CODE BEGIN Check_RTC_BKUP */
-
-  /* USER CODE END Check_RTC_BKUP */
-
-  /** Initialize RTC and set the Time and Date
-  */
-  sTime.Hours = 0x0;
-  sTime.Minutes = 0x0;
-  sTime.Seconds = 0x0;
-  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x1;
-  sDate.Year = 0x0;
-
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN RTC_Init 2 */
-
-  /* USER CODE END RTC_Init 2 */
+	/* USER CODE END CAN1_Init 2 */
 
 }
 
 /**
-  * @brief SPI1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SPI1_Init(void)
-{
+ * @brief RTC Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_RTC_Init(void) {
 
-  /* USER CODE BEGIN SPI1_Init 0 */
+	/* USER CODE BEGIN RTC_Init 0 */
 
-  /* USER CODE END SPI1_Init 0 */
+	/* USER CODE END RTC_Init 0 */
 
-  /* USER CODE BEGIN SPI1_Init 1 */
+	RTC_TimeTypeDef sTime = { 0 };
+	RTC_DateTypeDef sDate = { 0 };
 
-  /* USER CODE END SPI1_Init 1 */
-  /* SPI1 parameter configuration*/
-  hspi1.Instance = SPI1;
-  hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
-  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi1.Init.CRCPolynomial = 10;
-  if (HAL_SPI_Init(&hspi1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SPI1_Init 2 */
+	/* USER CODE BEGIN RTC_Init 1 */
 
-  /* USER CODE END SPI1_Init 2 */
+	/* USER CODE END RTC_Init 1 */
+
+	/** Initialize RTC Only
+	 */
+	hrtc.Instance = RTC;
+	hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+	hrtc.Init.AsynchPrediv = 127;
+	hrtc.Init.SynchPrediv = 255;
+	hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+	hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+	hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+	if (HAL_RTC_Init(&hrtc) != HAL_OK) {
+		Error_Handler();
+	}
+
+	/* USER CODE BEGIN Check_RTC_BKUP */
+
+	/* USER CODE END Check_RTC_BKUP */
+
+	/** Initialize RTC and set the Time and Date
+	 */
+	sTime.Hours = 0x0;
+	sTime.Minutes = 0x0;
+	sTime.Seconds = 0x0;
+	sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+	sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK) {
+		Error_Handler();
+	}
+	sDate.WeekDay = RTC_WEEKDAY_MONDAY;
+	sDate.Month = RTC_MONTH_JANUARY;
+	sDate.Date = 0x1;
+	sDate.Year = 0x0;
+
+	if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN RTC_Init 2 */
+
+	/* USER CODE END RTC_Init 2 */
 
 }
 
 /**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void)
-{
+ * @brief SPI1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_SPI1_Init(void) {
 
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA2_CLK_ENABLE();
+	/* USER CODE BEGIN SPI1_Init 0 */
 
-  /* DMA interrupt init */
-  /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+	/* USER CODE END SPI1_Init 0 */
+
+	/* USER CODE BEGIN SPI1_Init 1 */
+
+	/* USER CODE END SPI1_Init 1 */
+	/* SPI1 parameter configuration*/
+	hspi1.Instance = SPI1;
+	hspi1.Init.Mode = SPI_MODE_MASTER;
+	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+	hspi1.Init.NSS = SPI_NSS_SOFT;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+	hspi1.Init.CRCPolynomial = 10;
+	if (HAL_SPI_Init(&hspi1) != HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN SPI1_Init 2 */
+
+	/* USER CODE END SPI1_Init 2 */
 
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
+ * Enable DMA controller clock
+ */
+static void MX_DMA_Init(void) {
 
-  /* USER CODE END MX_GPIO_Init_1 */
+	/* DMA controller clock enable */
+	__HAL_RCC_DMA2_CLK_ENABLE();
 
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
+	/* DMA interrupt init */
+	/* DMA2_Stream3_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, CS_Pin|DC_Pin|RESET_Pin, GPIO_PIN_RESET);
+}
 
-  /*Configure GPIO pins : CS_Pin DC_Pin RESET_Pin */
-  GPIO_InitStruct.Pin = CS_Pin|DC_Pin|RESET_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+/**
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_GPIO_Init(void) {
+	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+	/* USER CODE BEGIN MX_GPIO_Init_1 */
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
+	/* USER CODE END MX_GPIO_Init_1 */
 
-  /* USER CODE END MX_GPIO_Init_2 */
+	/* GPIO Ports Clock Enable */
+	__HAL_RCC_GPIOH_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOE_CLK_ENABLE();
+
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(GPIOE, CS_Pin | DC_Pin | RESET_Pin, GPIO_PIN_RESET);
+
+	/*Configure GPIO pins : CS_Pin DC_Pin RESET_Pin */
+	GPIO_InitStruct.Pin = CS_Pin | DC_Pin | RESET_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+	/* USER CODE BEGIN MX_GPIO_Init_2 */
+
+	/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -464,17 +511,16 @@ static void MX_GPIO_Init(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void) {
+	/* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
 	__disable_irq();
 	while (1) {
 	}
-  /* USER CODE END Error_Handler_Debug */
+	/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
