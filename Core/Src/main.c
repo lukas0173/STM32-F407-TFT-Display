@@ -44,6 +44,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+
 CAN_HandleTypeDef hcan1;
 
 RTC_HandleTypeDef hrtc;
@@ -70,6 +72,8 @@ int32_t previousAngleValue = -1700;
 uint8_t rotationDirection = 1;
 bool toggleSignal = false;
 
+uint16_t pedalValue = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,6 +83,7 @@ static void MX_DMA_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_RTC_Init(void);
 static void MX_CAN1_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -204,6 +209,7 @@ int main(void)
   MX_SPI1_Init();
   MX_RTC_Init();
   MX_CAN1_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 	lv_init();
 	lv_port_disp_init();
@@ -221,9 +227,9 @@ int main(void)
 	sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO1;
 	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
 	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-	sFilterConfig.FilterIdHigh = 0xAAA << 5;
+	sFilterConfig.FilterIdHigh = 0x0000;
 	sFilterConfig.FilterIdLow = 0;
-	sFilterConfig.FilterMaskIdHigh = 0x7FF << 5; // SET 0 to unfilter
+	sFilterConfig.FilterMaskIdHigh = 0x0000; // SET 0 to unfilter
 	sFilterConfig.FilterMaskIdLow = 0;
 
 	if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig) != HAL_OK) {
@@ -243,56 +249,53 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-//		HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
-//		HAL_Delay(1000);
-
-		lv_timer_handler();
-		HAL_Delay(5);
+//		lv_timer_handler();
+//		HAL_Delay(5);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		delayCounter++;
-//		if (delayCounter % 10 == 0) {
+//		delayCounter++;
+////		if (delayCounter % 10 == 0) {
+////
+////			if (speedValue == 70) {
+////				speedValue = 0;
+////			}
+////			speedValue++;
+////			update_speed_display(speedValue);
+////			rotationValue = -1700 + speedValue * 43; // From 1700 to ~ 3000
+////			update_speed_indicator_arrow(ui_speed_indicator_arrow,
+////					rotationValue, previousAngleValue, 50);
+////			previousAngleValue = rotationValue;
+////		}
 //
-//			if (speedValue == 70) {
-//				speedValue = 0;
-//			}
-//			speedValue++;
+//		if (delayCounter % 30 == 0) {
+//			speedValue = (speedValue == 0) ? 70 : 0;
 //			update_speed_display(speedValue);
+//
 //			rotationValue = -1700 + speedValue * 43; // From 1700 to ~ 3000
 //			update_speed_indicator_arrow(ui_speed_indicator_arrow,
-//					rotationValue, previousAngleValue, 50);
+//					rotationValue, previousAngleValue, 500);
 //			previousAngleValue = rotationValue;
 //		}
-
-		if (delayCounter % 30 == 0) {
-			speedValue = (speedValue == 0) ? 70 : 0;
-			update_speed_display(speedValue);
-
-			rotationValue = -1700 + speedValue * 43; // From 1700 to ~ 3000
-			update_speed_indicator_arrow(ui_speed_indicator_arrow,
-					rotationValue, previousAngleValue, 500);
-			previousAngleValue = rotationValue;
-		}
-
-		if (delayCounter == 15) {
-
-			toggleSignal = !toggleSignal;
-			toggle_indicator(ui_turn_signal_left, toggleSignal);
-		}
-
-		if (delayCounter == 20) {
-
-			toggleSignal = !toggleSignal;
-			toggle_indicator(ui_turn_signal_right, toggleSignal);
-		}
-
-		if (delayCounter == 25) {
-			//delayCounter = 0;
-
-			toggleSignal = !toggleSignal;
-			toggle_indicator(ui_engine_check, toggleSignal);
-		}
+//
+//		if (delayCounter == 15) {
+//
+//			toggleSignal = !toggleSignal;
+//			toggle_indicator(ui_turn_signal_left, toggleSignal);
+//		}
+//
+//		if (delayCounter == 20) {
+//
+//			toggleSignal = !toggleSignal;
+//			toggle_indicator(ui_turn_signal_right, toggleSignal);
+//		}
+//
+//		if (delayCounter == 25) {
+//			//delayCounter = 0;
+//
+//			toggleSignal = !toggleSignal;
+//			toggle_indicator(ui_engine_check, toggleSignal);
+//		}
 
 	}
   /* USER CODE END 3 */
@@ -344,6 +347,58 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
   * @brief CAN1 Initialization Function
   * @param None
   * @retval None
@@ -359,11 +414,11 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 6;
-  hcan1.Init.Mode = CAN_MODE_LOOPBACK;
+  hcan1.Init.Prescaler = 21;
+  hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_11TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_2TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
